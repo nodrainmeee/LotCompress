@@ -1,0 +1,107 @@
+# Build Windows de LotCompress : tests, FFmpeg + ExifTool, PyInstaller (onedir), installateur Inno Setup.
+# Publication automatique d'une Release GitHub sur les tags « v* » (ex. git tag v1.0.0 && git push --tags).
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Lire la version (lotcompress/__init__.py)
+        id: version
+        run: |
+          $v = python -c "import re,pathlib;print(re.search(r'__version__\s*=\s*[\x22\x27]([^\x22\x27]+)', pathlib.Path('lotcompress/__init__.py').read_text(encoding='utf-8')).group(1))"
+          if (-not $v) { throw "Version introuvable" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version : $v"
+
+      - name: Installer les dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Télécharger FFmpeg (gyan.dev, build essentials GPL win64)
+        run: |
+          New-Item -ItemType Directory -Force -Path bin | Out-Null
+          Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg_tmp -Force
+          $b = Get-ChildItem ffmpeg_tmp -Recurse -Filter ffmpeg.exe | Select-Object -First 1
+          Copy-Item $b.FullName bin\ffmpeg.exe
+          Copy-Item (Join-Path $b.DirectoryName "ffprobe.exe") bin\ffprobe.exe
+          bin\ffmpeg.exe -hide_banner -version | Select-Object -First 1
+
+      - name: Télécharger ExifTool (Windows 64 bits, exiftool.org)
+        run: |
+          $v = (Invoke-WebRequest -Uri "https://exiftool.org/ver.txt" -UseBasicParsing).Content.Trim()
+          $url = "https://sourceforge.net/projects/exiftool/files/exiftool-${v}_64.zip/download"
+          Invoke-WebRequest -Uri $url -OutFile exiftool.zip -UserAgent "Wget"
+          Expand-Archive exiftool.zip -DestinationPath exiftool_tmp -Force
+          $k = Get-ChildItem exiftool_tmp -Recurse -Filter "exiftool(-k).exe" | Select-Object -First 1
+          # Renommage obligatoire : « exiftool(-k).exe » attend une touche à la fin
+          Copy-Item $k.FullName bin\exiftool.exe
+          Copy-Item (Join-Path $k.DirectoryName "exiftool_files") bin\exiftool_files -Recurse
+          bin\exiftool.exe -ver
+
+      - name: Tests (pytest)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q
+
+      - name: PyInstaller (onedir → dist/LotCompress)
+        run: |
+          pyinstaller --noconfirm --clean lotcompress.spec
+          if (-not (Test-Path dist\LotCompress\LotCompress.exe)) { throw "Build PyInstaller manquant" }
+
+      - name: Installer Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compiler l'installateur
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=${{ steps.version.outputs.version }}" installer\LotCompress.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC a échoué" }
+
+      - name: Publier l'artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LotCompress-Setup-${{ steps.version.outputs.version }}
+          path: installer/Output/LotCompress-Setup.exe
+          if-no-files-found: error
+
+  release:
+    needs: build-windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LotCompress-Setup-${{ needs.build-windows.outputs.version }}
+          path: release
+      - name: Créer la Release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          name: LotCompress ${{ github.ref_name }}
+          files: release/LotCompress-Setup.exe
+          generate_release_notes: true
