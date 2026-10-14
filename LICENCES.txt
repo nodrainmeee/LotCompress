@@ -1,0 +1,73 @@
+LotCompress — Licences et composants tiers
+==========================================
+
+1. LotCompress
+--------------
+LotCompress 1.0.0 — compresseur d'images et de vidéos par lot, avec gestion des métadonnées.
+Copyright (c) 2026 l'auteur de LotCompress. Tous droits réservés, sauf mention contraire.
+Le logiciel est fourni « tel quel », sans garantie d'aucune sorte. L'auteur ne pourra être tenu
+responsable d'aucun dommage ou perte de données résultant de son utilisation. Par défaut, les
+fichiers originaux ne sont jamais modifiés.
+
+LotCompress est distribué avec les composants tiers ci-dessous, qui restent soumis à leurs
+propres licences. Ces licences s'appliquent à ces composants, pas au code de LotCompress.
+
+
+2. FFmpeg (ffmpeg.exe, ffprobe.exe) — GNU GPL v3 (build « GPL »)
+-----------------------------------------------------------------
+Projet : https://ffmpeg.org
+Licence : https://ffmpeg.org/legal.html — GPL v3 : https://www.gnu.org/licenses/gpl-3.0.html
+Les exécutables fournis proviennent de builds Windows tiers, compilés avec des bibliothèques GPL
+(libx264, libx265…) :
+  - gyan.dev (build « essentials ») : https://www.gyan.dev/ffmpeg/builds/
+    Sources : https://github.com/GyanD/codexffmpeg
+  - ou BtbN FFmpeg-Builds : https://github.com/BtbN/FFmpeg-Builds
+Code source d'FFmpeg : https://ffmpeg.org/download.html#get-sources
+LotCompress appelle FFmpeg comme programme externe distinct (sous-processus), sans liaison.
+Conformément à la GPL, le code source correspondant au build utilisé est disponible aux adresses
+ci-dessus (le numéro de version figure dans « ffmpeg -version »).
+
+
+3. ExifTool (exiftool.exe, dossier exiftool_files) — Perl Artistic License ou GNU GPL
+--------------------------------------------------------------------------------------
+Auteur : Phil Harvey — https://exiftool.org
+« This is free software; you can redistribute it and/or modify it under the same terms as Perl
+itself » : Artistic License (https://dev.perl.org/licenses/artistic.html) ou GNU GPL
+(https://www.gnu.org/licenses/gpl-1.0.html), au choix.
+Le paquet Windows inclut un interpréteur Perl (Strawberry Perl, mêmes conditions que Perl).
+Appelé comme programme externe distinct.
+
+
+4. Qt for Python (PySide6) et Qt — GNU LGPL v3
+----------------------------------------------
+https://www.qt.io/qt-for-python — Licence : https://www.gnu.org/licenses/lgpl-3.0.html
+Code source : https://code.qt.io  et  https://download.qt.io/official_releases/QtForPython/
+Les bibliothèques Qt/PySide6 sont fournies sous forme de bibliothèques dynamiques séparées
+(dossier _internal de l'application) et peuvent être remplacées par l'utilisateur par une
+version modifiée compatible.
+
+
+5. Pillow — licence MIT-CMU (HPND)
+----------------------------------
+Copyright © 1997-2011 Secret Labs AB, © 1995-2011 Fredrik Lundh et contributeurs, © 2010 Jeffrey
+A. Clark et contributeurs. https://python-pillow.org — https://github.com/python-pillow/Pillow/blob/main/LICENSE
+Pillow inclut des bibliothèques (libjpeg-turbo, libpng, libwebp, zlib, libtiff, FreeType…) sous
+licences permissives (BSD, IJG, zlib, libpng, FTL).
+
+
+6. pillow-heif — BSD 3-Clause ; libheif — GNU LGPL v3
+------------------------------------------------------
+https://github.com/bigcat88/pillow_heif — libheif : https://github.com/strukturag/libheif
+(LGPL v3 ; codecs associés : libde265 LGPL v3, x265 GPL v2 selon le build).
+
+
+7. PyInstaller — GPL v2 avec exception pour le bootloader
+---------------------------------------------------------
+https://pyinstaller.org — https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt
+Le programme d'amorçage (bootloader) intégré à LotCompress.exe est couvert par une exception
+explicite autorisant la distribution d'applications générées sous n'importe quelle licence.
+
+
+8. Python — Python Software Foundation License
+----------------------------------------------
+https://docs.python.org/3/license.html
